@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portfolio | Digital Content Creator</title>
+  <style>
+    :root {
+      --bg:      #FFFDF9;
+      --white:   #FFFFFF;
+      --soft:    #FDF5EC;
+      --soft-2:  #F0F5FF;
+      --coral:   #FF5E5B;
+      --teal:    #00B09B;
+      --amber:   #FFB800;
+      --violet:  #7B61FF;
+      --text:    #1C1C24;
+      --muted:   #848496;
+      --border:  rgba(0,0,0,0.07);
+      --shadow:  0 4px 24px rgba(0,0,0,0.07);
+      --shadow-lg: 0 12px 48px rgba(0,0,0,0.1);
+      --r-sm:    10px;
+      --r-md:    18px;
+      --r-lg:    28px;
+      --ease:    cubic-bezier(0.22, 1, 0.36, 1);
+      --font:    'Hiragino Kaku Gothic ProN','Hiragino Sans','Yu Gothic Medium','Meiryo',sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.75;
+      overflow-x: hidden;
+    }
+
+    /* ── Nav ─────────────────────────────── */
+    nav {
+      position: fixed;
+      inset: 0 0 auto;
+      z-index: 200;
+      height: 66px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 6%;
+      background: rgba(255,253,249,0.92);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-logo {
+      display: flex; align-items: center; gap: 8px;
+      text-decoration: none;
+    }
+    .logo-mark {
+      width: 32px; height: 32px; border-radius: 10px;
+      background: linear-gradient(135deg, var(--coral), var(--amber));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem;
+    }
+    .logo-text { font-size: 0.95rem; font-weight: 800; color: var(--text); }
+    .nav-links { display: flex; gap: 32px; list-style: none; }
+    .nav-links a {
+      color: var(--muted); text-decoration: none;
+      font-size: 0.84rem; font-weight: 500; letter-spacing: 0.03em;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--text); }
+    .nav-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 10px 22px; border-radius: 100px;
+      background: var(--coral); color: #fff;
+      text-decoration: none; font-size: 0.82rem; font-weight: 700;
+      transition: transform 0.25s var(--ease), box-shadow 0.25s;
+      box-shadow: 0 4px 16px rgba(255,94,91,0.35);
+    }
+    .nav-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(255,94,91,0.45); }
+
+    /* ── Scroll Reveal ───────────────────── */
+    .show {
+      opacity: 0; transform: translateY(28px);
+      transition: opacity 0.8s var(--ease), transform 0.8s var(--ease);
+    }
+    .show.in { opacity: 1; transform: translateY(0); }
+
+    /* ── Section Labels ──────────────────── */
+    .s-label {
+      display: inline-flex; align-items: center; gap: 7px;
+      font-size: 0.7rem; font-weight: 800;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      padding: 5px 14px; border-radius: 100px; margin-bottom: 20px;
+    }
+    .s-label.coral  { color: var(--coral);  background: rgba(255,94,91,0.1);  }
+    .s-label.teal   { color: var(--teal);   background: rgba(0,176,155,0.1); }
+    .s-label.violet { color: var(--violet); background: rgba(123,97,255,0.1); }
+    .s-title {
+      font-size: clamp(1.8rem, 3.8vw, 2.8rem);
+      font-weight: 900; line-height: 1.2;
+      letter-spacing: -0.025em; margin-bottom: 16px;
+    }
+    .s-desc { color: var(--muted); font-size: 0.95rem; line-height: 1.85; }
+
+    /* ── ① Hero ──────────────────────────── */
+    #hero {
+      min-height: 100vh;
+      padding: 120px 6% 80px;
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      gap: 60px; align-items: center;
+      max-width: 1200px; margin: 0 auto;
+      position: relative;
+    }
+    .blob {
+      position: fixed; border-radius: 50%;
+      pointer-events: none; z-index: -1;
+    }
+    .blob-1 {
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(255,94,91,0.1) 0%, transparent 70%);
+      top: -100px; right: -100px; filter: blur(50px);
+    }
+    .blob-2 {
+      width: 360px; height: 360px;
+      background: radial-gradient(circle, rgba(0,176,155,0.08) 0%, transparent 70%);
+      bottom: 20%; left: -80px; filter: blur(40px);
+    }
+    .hero-kicker {
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 7px 16px 7px 10px; border-radius: 100px;
+      background: var(--white); border: 1.5px solid var(--border);
+      box-shadow: var(--shadow); margin-bottom: 32px;
+    }
+    .kicker-dot {
+      width: 8px; height: 8px; border-radius: 50%; background: var(--teal);
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(0,176,155,0.4); }
+      50%       { box-shadow: 0 0 0 6px rgba(0,176,155,0); }
+    }
+    .kicker-text { font-size: 0.78rem; font-weight: 600; color: var(--muted); letter-spacing: 0.06em; }
+    .hero-hl {
+      font-size: clamp(2.8rem, 5.5vw, 4.4rem);
+      font-weight: 900; line-height: 1.1;
+      letter-spacing: -0.035em; margin-bottom: 26px;
+    }
+    .hl-mark {
+      position: relative; display: inline-block; color: var(--coral);
+    }
+    .hl-mark::before {
+      content: ''; position: absolute;
+      bottom: 2px; left: -4px; right: -4px; height: 38%;
+      background: rgba(255,184,0,0.25); border-radius: 4px; z-index: -1;
+    }
+    .hero-sub {
+      font-size: 1rem; color: var(--muted); line-height: 1.9;
+      margin-bottom: 40px; max-width: 420px;
+    }
+    .hero-ctas { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 52px; }
+    .btn-coral {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 14px 30px; border-radius: 100px;
+      background: var(--coral); color: #fff; text-decoration: none;
+      font-size: 0.92rem; font-weight: 700;
+      box-shadow: 0 6px 24px rgba(255,94,91,0.38);
+      transition: transform 0.3s var(--ease), box-shadow 0.3s;
+    }
+    .btn-coral:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(255,94,91,0.5); }
+    .btn-coral svg { width: 16px; height: 16px; }
+    .btn-ghost-light {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 13px 28px; border-radius: 100px;
+      border: 1.5px solid rgba(0,0,0,0.12); color: var(--text);
+      text-decoration: none; font-size: 0.9rem; font-weight: 600;
+      background: var(--white); box-shadow: var(--shadow);
+      transition: border-color 0.25s, box-shadow 0.25s, transform 0.25s;
+    }
+    .btn-ghost-light:hover { border-color: var(--coral); color: var(--coral); transform: translateY(-2px); }
+    .btn-ghost-light svg { width: 15px; height: 15px; }
+    .hero-stats { display: flex; gap: 32px; flex-wrap: wrap; }
+    .h-stat strong {
+      display: block; font-size: 1.6rem; font-weight: 900;
+      letter-spacing: -0.03em; color: var(--text);
+      line-height: 1; margin-bottom: 4px;
+    }
+    .h-stat strong em { color: var(--coral); font-style: normal; }
+    .h-stat span { font-size: 0.76rem; color: var(--muted); }
+    .hero-visual { position: relative; }
+    .hero-card {
+      width: 100%; aspect-ratio: 4/5; max-height: 520px;
+      border-radius: var(--r-lg); overflow: hidden; position: relative;
+      background: linear-gradient(145deg, #FFF1EC 0%, #FFE8F5 50%, #EEF0FF 100%);
+      border: 1.5px solid rgba(0,0,0,0.06); box-shadow: var(--shadow-lg);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .hero-card::before {
+      content: ''; position: absolute; inset: 0;
+      background-image:
+        radial-gradient(circle at 20% 20%, rgba(255,94,91,0.15) 0%, transparent 40%),
+        radial-gradient(circle at 80% 80%, rgba(0,176,155,0.12) 0%, transparent 40%),
+        radial-gradient(circle at 80% 20%, rgba(255,184,0,0.12) 0%, transparent 35%);
+    }
+    .hero-shape {
+      position: absolute; border-radius: 50%;
+      animation: shapeFloat 5s ease-in-out infinite;
+    }
+    .hs-1 { width:110px;height:110px; background:linear-gradient(135deg,rgba(255,94,91,0.7),rgba(255,184,0,0.6)); top:10%;left:10%; animation-duration:4s; }
+    .hs-2 { width:80px;height:80px; background:linear-gradient(135deg,rgba(0,176,155,0.7),rgba(123,97,255,0.5)); top:15%;right:12%; border-radius:24px; animation-duration:5.5s; animation-delay:0.7s; }
+    .hs-3 { width:60px;height:60px; background:linear-gradient(135deg,rgba(123,97,255,0.6),rgba(255,94,91,0.5)); bottom:28%;left:16%; border-radius:18px; animation-duration:3.8s; animation-delay:1.2s; }
+    .hs-4 { width:96px;height:96px; background:linear-gradient(135deg,rgba(255,184,0,0.55),rgba(0,176,155,0.45)); bottom:10%;right:10%; animation-duration:6s; animation-delay:0.3s; }
+    @keyframes shapeFloat {
+      0%,100% { transform:translateY(0) rotate(0deg); }
+      50%      { transform:translateY(-16px) rotate(5deg); }
+    }
+    .hero-placeholder { position:relative;z-index:1;text-align:center; }
+    .hero-placeholder svg { width:44px;height:44px;color:rgba(0,0,0,0.15);margin-bottom:10px; }
+    .hero-placeholder p { font-size:0.72rem;color:rgba(0,0,0,0.2);letter-spacing:0.1em; }
+    .float-card {
+      position: absolute; background: var(--white); border-radius: 16px;
+      padding: 12px 16px; display: flex; align-items: center; gap: 10px;
+      box-shadow: 0 8px 28px rgba(0,0,0,0.12); white-space: nowrap;
+      animation: cardFloat 4s ease-in-out infinite;
+    }
+    .float-card:nth-of-type(1) { bottom:-20px;left:-24px;animation-delay:0s; }
+    .float-card:nth-of-type(2) { top:-16px;right:-16px;animation-delay:1.8s; }
+    @keyframes cardFloat {
+      0%,100% { transform:translateY(0); }
+      50%      { transform:translateY(-7px); }
+    }
+    .fc-icon { width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0; }
+    .fc-icon.coral { background:rgba(255,94,91,0.12); }
+    .fc-icon.teal  { background:rgba(0,176,155,0.12); }
+    .fc-txt strong { display:block;font-size:0.82rem;font-weight:700;color:var(--text);line-height:1.2; }
+    .fc-txt small  { font-size:0.68rem;color:var(--muted); }
+
+    /* ── ② About ─────────────────────────── */
+    #about { background: var(--soft); padding: 100px 6%; }
+    .about-wrap { max-width: 1100px; margin: 0 auto; }
+    .about-top {
+      display: grid; grid-template-columns: 1fr 1.2fr;
+      gap: 80px; align-items: center; margin-bottom: 72px;
+    }
+
+    /* ─── Profile photo ─────────────────── */
+    .profile-wrap { position: relative; }
+
+    .profile-img-box {
+      width: 100%;
+      aspect-ratio: 1 / 1.1;
+      border-radius: var(--r-lg);
+      overflow: hidden;
+      border: 1.5px solid rgba(0,0,0,0.06);
+      box-shadow: var(--shadow);
+      background: linear-gradient(145deg, #FFE8E8 0%, #FFD9F5 50%, #E8E0FF 100%);
+    }
+    .profile-img-box img {
+      width: 100%; height: 100%;
+      object-fit: contain;
+      object-position: center center;
+      display: block;
+    }
+
+    .photo-badge {
+      position: absolute; bottom: -16px; right: -16px;
+      background: var(--coral); color: #fff;
+      border-radius: 16px; padding: 14px 18px; text-align: center;
+      box-shadow: 0 8px 24px rgba(255,94,91,0.4); z-index: 2;
+    }
+    .photo-badge strong { display:block;font-size:1.8rem;font-weight:900;line-height:1; }
+    .photo-badge span   { font-size:0.66rem;opacity:0.85; }
+
+    .about-text .s-desc { margin-bottom: 28px; }
+    .plat-chips { display:flex;flex-wrap:wrap;gap:10px;margin-bottom:28px; }
+    .p-chip {
+      display:inline-flex;align-items:center;gap:7px;
+      padding:8px 16px;border-radius:10px;
+      background:var(--white);border:1.5px solid var(--border);
+      font-size:0.82rem;font-weight:600;color:var(--text);
+      box-shadow:var(--shadow);transition:all 0.25s;
+    }
+    .p-chip:hover { border-color:var(--coral);color:var(--coral); }
+
+    .skill-grid { display:grid;grid-template-columns:repeat(4,1fr);gap:12px; }
+    .sk-card {
+      background:var(--white);border-radius:14px;padding:20px 14px;
+      text-align:center;box-shadow:var(--shadow);
+      border:1.5px solid transparent;transition:all 0.25s var(--ease);
+    }
+    .sk-card:hover { border-color:rgba(255,94,91,0.2);transform:translateY(-4px);box-shadow:var(--shadow-lg); }
+    .sk-card .sk-emoji { font-size:1.6rem;margin-bottom:10px;display:block; }
+    .sk-card .sk-name  { font-size:0.75rem;font-weight:700;color:var(--text);line-height:1.3; }
+
+    /* ── ③ Works – Grid ──────────────────── */
+    #works { padding: 100px 6%; background: var(--white); }
+    .works-hd { text-align:center;margin-bottom:56px; }
+    .works-hd .s-desc { max-width:480px;margin:0 auto; }
+    .works-grid {
+      display:grid;grid-template-columns:repeat(2,1fr);
+      gap:28px;max-width:1100px;margin:0 auto;
+    }
+    .w-card {
+      background:var(--white);border-radius:var(--r-md);overflow:hidden;
+      border:1.5px solid var(--border);box-shadow:var(--shadow);
+      transition:transform 0.35s var(--ease),box-shadow 0.35s;
+    }
+    .w-card:hover { transform:translateY(-10px);box-shadow:var(--shadow-lg); }
+    .w-card:hover .w-thumb-overlay { opacity:1; }
+    .w-card:hover .w-arrow { background:var(--coral);color:#fff;border-color:var(--coral); }
+    .w-thumb { position:relative;aspect-ratio:16/9;overflow:hidden; }
+    .w-thumb-bg { width:100%;height:100%;display:flex;align-items:center;justify-content:center;position:relative; }
+    .w-card:nth-child(1) .w-thumb-bg { background:linear-gradient(135deg,#FFF0ED 0%,#FFD6D0 50%,#FFBAB0 100%); }
+    .w-card:nth-child(2) .w-thumb-bg { background:linear-gradient(135deg,#E8FFF8 0%,#B8F0E0 50%,#80E0C0 100%); }
+    .w-card:nth-child(3) .w-thumb-bg { background:linear-gradient(135deg,#F0EEFF 0%,#D8CFFF 50%,#BFB0FF 100%); }
+    .w-card:nth-child(4) .w-thumb-bg { background:linear-gradient(135deg,#FFFBEA 0%,#FFF1B0 50%,#FFE680 100%); }
+    .w-thumb-deco { position:absolute;border-radius:50%; }
+    .w-card:nth-child(1) .wd-a { width:80px;height:80px;background:rgba(255,94,91,0.35);top:10%;left:8%;animation:tdFloat 4s ease-in-out infinite; }
+    .w-card:nth-child(1) .wd-b { width:50px;height:50px;background:rgba(255,184,0,0.4);border-radius:14px;bottom:12%;right:10%;animation:tdFloat 5s ease-in-out infinite 0.8s; }
+    .w-card:nth-child(2) .wd-a { width:72px;height:72px;background:rgba(0,176,155,0.4);top:12%;right:12%;animation:tdFloat 4.5s ease-in-out infinite; }
+    .w-card:nth-child(2) .wd-b { width:44px;height:44px;background:rgba(123,97,255,0.3);border-radius:12px;bottom:14%;left:12%;animation:tdFloat 3.5s ease-in-out infinite 1s; }
+    .w-card:nth-child(3) .wd-a { width:88px;height:88px;background:rgba(123,97,255,0.35);top:8%;left:10%;animation:tdFloat 5s ease-in-out infinite; }
+    .w-card:nth-child(3) .wd-b { width:52px;height:52px;background:rgba(255,94,91,0.3);border-radius:16px;bottom:10%;right:8%;animation:tdFloat 4s ease-in-out infinite 0.6s; }
+    .w-card:nth-child(4) .wd-a { width:76px;height:76px;background:rgba(255,184,0,0.5);top:12%;right:10%;animation:tdFloat 4.2s ease-in-out infinite; }
+    .w-card:nth-child(4) .wd-b { width:48px;height:48px;background:rgba(255,94,91,0.3);border-radius:14px;bottom:12%;left:10%;animation:tdFloat 5.2s ease-in-out infinite 1.2s; }
+    @keyframes tdFloat {
+      0%,100% { transform:translateY(0) rotate(0deg); }
+      50%      { transform:translateY(-10px) rotate(4deg); }
+    }
+    .w-thumb-icon { position:relative;z-index:1;text-align:center; }
+    .w-thumb-icon svg { width:40px;height:40px;color:rgba(0,0,0,0.18); }
+    .w-thumb-icon p   { font-size:0.66rem;color:rgba(0,0,0,0.2);letter-spacing:0.1em;margin-top:8px; }
+    .w-thumb-overlay {
+      position:absolute;inset:0;background:rgba(255,94,91,0.15);
+      opacity:0;transition:opacity 0.3s;
+      display:flex;align-items:center;justify-content:center;
+    }
+    .w-thumb-overlay svg { width:44px;height:44px;color:rgba(255,255,255,0.9); }
+    .w-body { padding:22px 24px 24px; }
+    .w-tags { display:flex;flex-wrap:wrap;gap:6px;margin-bottom:13px; }
+    .w-tag { font-size:0.67rem;font-weight:700;letter-spacing:0.04em;padding:4px 11px;border-radius:100px; }
+    .tag-coral  { background:rgba(255,94,91,0.12);  color:#D63E3C; }
+    .tag-teal   { background:rgba(0,176,155,0.12);  color:#007D6D; }
+    .tag-violet { background:rgba(123,97,255,0.12); color:#5B45CC; }
+    .tag-amber  { background:rgba(255,184,0,0.14);  color:#9A7000; }
+    .tag-pink   { background:rgba(219,39,119,0.1);  color:#9D1B59; }
+    .tag-green  { background:rgba(16,185,129,0.1);  color:#0A7A55; }
+    .w-title { font-size:1rem;font-weight:800;line-height:1.4;margin-bottom:10px;color:var(--text); }
+    .w-desc  { font-size:0.82rem;color:var(--muted);line-height:1.75;margin-bottom:18px; }
+    .w-footer { display:flex;align-items:center;justify-content:space-between; }
+    .w-arrow {
+      width:36px;height:36px;border-radius:50%;
+      border:1.5px solid var(--border);
+      display:flex;align-items:center;justify-content:center;
+      transition:all 0.3s var(--ease);flex-shrink:0;
+    }
+    .w-arrow svg { width:16px;height:16px; }
+
+    /* ── ④ Contact ───────────────────────── */
+    #contact { padding:100px 6%;background:var(--soft-2); }
+    .contact-wrap {
+      max-width:1100px;margin:0 auto;
+      display:grid;grid-template-columns:1fr 1.4fr;
+      gap:80px;align-items:start;
+    }
+    .contact-hl { font-size:clamp(2rem,3.8vw,3rem);font-weight:900;letter-spacing:-0.03em;line-height:1.15;margin-bottom:20px;margin-top:14px; }
+    .c-coral { color:var(--coral); }
+    .contact-note { font-size:0.88rem;color:var(--muted);line-height:1.9;margin-bottom:36px; }
+    .c-row {
+      display:flex;align-items:center;gap:14px;
+      padding:16px 18px;border-radius:14px;
+      background:var(--white);box-shadow:var(--shadow);margin-bottom:12px;
+      transition:box-shadow 0.25s,transform 0.25s;
+    }
+    .c-row:hover { box-shadow:var(--shadow-lg);transform:translateY(-2px); }
+    .c-ico { width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0; }
+    .c-ico svg { width:19px;height:19px; }
+    .c-ico.coral { background:rgba(255,94,91,0.1);color:var(--coral); }
+    .c-ico.teal  { background:rgba(0,176,155,0.1);color:var(--teal); }
+    .c-info strong { display:block;font-size:0.7rem;color:var(--muted);margin-bottom:2px; }
+    .c-info span   { font-size:0.88rem;color:var(--text);font-weight:600; }
+    .form-box { background:var(--white);border-radius:var(--r-lg);padding:44px 40px;box-shadow:var(--shadow-lg); }
+    .row2 { display:grid;grid-template-columns:1fr 1fr;gap:16px; }
+    .fg { margin-bottom:18px; }
+    .fg label { display:block;font-size:0.78rem;font-weight:700;color:var(--text);margin-bottom:8px; }
+    .fg label .req { color:var(--coral);margin-left:2px; }
+    .fc {
+      width:100%;background:var(--bg);border:1.5px solid rgba(0,0,0,0.1);
+      border-radius:11px;padding:13px 15px;color:var(--text);
+      font-family:var(--font);font-size:0.88rem;outline:none;
+      appearance:none;-webkit-appearance:none;
+      transition:border-color 0.25s,box-shadow 0.25s,background 0.25s;
+    }
+    .fc::placeholder { color:rgba(0,0,0,0.2); }
+    .fc:focus { border-color:var(--coral);background:#fff;box-shadow:0 0 0 3px rgba(255,94,91,0.12); }
+    select.fc {
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24'%3E%3Cpath stroke='%23848496' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat:no-repeat;background-position:right 14px center;background-size:18px;
+      padding-right:42px;cursor:pointer;
+    }
+    textarea.fc { resize:vertical;min-height:130px; }
+    .sub-btn {
+      width:100%;padding:16px;border:none;border-radius:12px;
+      background:var(--coral);color:#fff;font-family:var(--font);
+      font-size:0.95rem;font-weight:800;letter-spacing:0.04em;cursor:pointer;
+      display:flex;align-items:center;justify-content:center;gap:8px;
+      box-shadow:0 6px 24px rgba(255,94,91,0.38);
+      transition:transform 0.3s var(--ease),box-shadow 0.3s;margin-top:4px;
+    }
+    .sub-btn:hover { transform:translateY(-3px);box-shadow:0 12px 36px rgba(255,94,91,0.5); }
+    .sub-btn:active { transform:translateY(0); }
+    .sub-btn svg { width:17px;height:17px; }
+
+    /* ── Footer ──────────────────────────── */
+    footer {
+      background:var(--text);padding:40px 6%;
+      display:flex;justify-content:space-between;align-items:center;
+      flex-wrap:wrap;gap:20px;
+    }
+    .ft-logo { display:flex;align-items:center;gap:9px; }
+    .ft-logo-mark { width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,var(--coral),var(--amber)); }
+    .ft-logo-txt { font-size:0.92rem;font-weight:800;color:#fff; }
+    .ft-nav { display:flex;gap:24px;list-style:none; }
+    .ft-nav a { color:rgba(255,255,255,0.38);text-decoration:none;font-size:0.8rem;transition:color 0.2s; }
+    .ft-nav a:hover { color:#fff; }
+    footer small { font-size:0.75rem;color:rgba(255,255,255,0.28); }
+
+    /* ── Responsive ≤ 900px ──────────────── */
+    @media (max-width: 900px) {
+      #hero { grid-template-columns:1fr;padding-top:110px; }
+      .hero-visual { order:-1; }
+      .hero-card { max-height:280px; }
+      .float-card:nth-of-type(1) { bottom:-12px;left:8px; }
+      .float-card:nth-of-type(2) { top:-12px;right:8px; }
+      .about-top { grid-template-columns:1fr;gap:40px; }
+      .works-grid { grid-template-columns:1fr; }
+      .contact-wrap { grid-template-columns:1fr;gap:40px; }
+      .row2 { grid-template-columns:1fr; }
+      .form-box { padding:28px 24px; }
+      footer { flex-direction:column;text-align:center; }
+    }
+
+    /* ── Responsive ≤ 640px (Mobile) ─────── */
+    @media (max-width: 640px) {
+      nav { padding:0 5%; }
+      .nav-links { display:none; }
+      #hero,#about,#works,#contact { padding-left:5%;padding-right:5%; }
+      #hero { padding-top:100px;gap:36px; }
+      section { padding-top:80px;padding-bottom:80px; }
+      .hero-hl { font-size:2.6rem; }
+      .hero-sub { font-size:0.9rem; }
+      .hero-stats { gap:20px; }
+      .skill-grid { grid-template-columns:repeat(2,1fr); }
+      .ft-nav { display:none; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+
+  <!-- Nav -->
+  <nav>
+    <a href="#" class="nav-logo">
+      <div class="logo-mark">✦</div>
+      <span class="logo-text">DC Creator</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="#about">About</a></li>
+      <li><a href="#works">Works</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+    <a href="#contact" class="nav-btn">お問い合わせ</a>
+  </nav>
+
+  <!-- ① Hero -->
+  <section id="hero">
+    <div class="hero-text show">
+      <div class="hero-kicker">
+        <div class="kicker-dot"></div>
+        <span class="kicker-text">Digital Content Creator — Now Available</span>
+      </div>
+      <h1 class="hero-hl">
+        届けたい想いを、<br>
+        <span class="hl-mark">刺さる</span>ビジュアルへ。
+      </h1>
+      <p class="hero-sub">
+        SNS運用・LPデザイン・バナー制作まで、<br>
+        AIとデザインの力で、あなたのブランドを<br>
+        次のステージへ引き上げます。
+      </p>
+      <div class="hero-ctas">
+        <a href="#contact" class="btn-coral">
+          お仕事のご相談
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </a>
+        <a href="#works" class="btn-ghost-light">
+          実績を見る
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </a>
+      </div>
+      <div class="hero-stats">
+        <div class="h-stat"><strong>3<em>+</em></strong><span>Years Experience</span></div>
+        <div class="h-stat"><strong>20<em>+</em></strong><span>Projects Done</span></div>
+        <div class="h-stat"><strong>3</strong><span>SNS Platforms</span></div>
+      </div>
+    </div>
+
+    <div class="hero-visual show" style="transition-delay:.15s">
+      <div class="hero-card">
+        <div class="hero-shape hs-1"></div>
+        <div class="hero-shape hs-2"></div>
+        <div class="hero-shape hs-3"></div>
+        <div class="hero-shape hs-4"></div>
+        <div class="hero-placeholder">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="3"/>
+            <circle cx="8.5" cy="8.5" r="1.5"/>
+            <polyline points="21 15 16 10 5 21"/>
+          </svg>
+          <p>MAIN VISUAL</p>
+        </div>
+      </div>
+      <div class="float-card">
+        <div class="fc-icon coral">✦</div>
+        <div class="fc-txt"><strong>AI × Design</strong><small>最先端クリエイティブ</small></div>
+      </div>
+      <div class="float-card">
+        <div class="fc-icon teal">📱</div>
+        <div class="fc-txt"><strong>SNS 完全対応</strong><small>Instagram / YouTube / Lemon8</small></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ② About -->
+  <section id="about">
+    <div class="about-wrap">
+      <div class="about-top">
+
+        <!-- Profile photo -->
+        <div class="profile-wrap show">
+          <div class="profile-img-box">
+            <img src="chara/e1.png" alt="プロフィール写真">
+          </div>
+          <div class="photo-badge">
+            <strong>3<span style="font-size:1rem">+</span></strong>
+            <span>Years</span>
+          </div>
+        </div>
+
+        <!-- Text -->
+        <div class="about-text show" style="transition-delay:.12s">
+          <span class="s-label coral">About Me</span>
+          <h2 class="s-title">
+            デジタルコンテンツで<br>
+            ブランドを輝かせる。
+          </h2>
+          <p class="s-desc">
+            SNSマーケターとして、Instagram・YouTube・Lemon8 などのプラットフォームに最適化されたコンテンツを制作。画像生成AIを活用したグラフィック作成から、Z世代〜F1層向けのPR施策、LPデザインまで幅広く対応します。
+          </p>
+          <div class="plat-chips">
+            <div class="p-chip">📸 Instagram</div>
+            <div class="p-chip">▶ YouTube</div>
+            <div class="p-chip">🍋 Lemon8</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Skill cards -->
+      <div class="skill-grid show" style="transition-delay:.2s">
+        <div class="sk-card"><span class="sk-emoji">📲</span><div class="sk-name">SNS運用</div></div>
+        <div class="sk-card"><span class="sk-emoji">🖥</span><div class="sk-name">LPデザイン</div></div>
+        <div class="sk-card"><span class="sk-emoji">🎨</span><div class="sk-name">バナー制作</div></div>
+        <div class="sk-card"><span class="sk-emoji">🤖</span><div class="sk-name">画像生成AI</div></div>
+        <div class="sk-card"><span class="sk-emoji">🖼</span><div class="sk-name">フィードデザイン</div></div>
+        <div class="sk-card"><span class="sk-emoji">▶</span><div class="sk-name">サムネイル制作</div></div>
+        <div class="sk-card"><span class="sk-emoji">✍️</span><div class="sk-name">コピーライティング</div></div>
+        <div class="sk-card"><span class="sk-emoji">👤</span><div class="sk-name">プロフィール設計</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ③ Works -->
+  <section id="works">
+    <div class="works-hd show">
+      <span class="s-label teal">Works</span>
+      <h2 class="s-title">制作実績</h2>
+      <p class="s-desc">これまでに手がけたプロジェクトの一部をご紹介します。</p>
+    </div>
+
+    <div class="works-grid">
+      <!-- Card 1 -->
+      <div class="w-card show">
+        <div class="w-thumb">
+          <div class="w-thumb-bg" style="background:none;">
+            <img src="port_sozai/online.png" alt="オンライン英会話LPデザイン" style="width:100%;height:100%;object-fit:cover;display:block;">
+          </div>
+          <div class="w-thumb-overlay"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+        </div>
+        <div class="w-body">
+          <div class="w-tags"><span class="w-tag tag-coral">LPデザイン</span><span class="w-tag tag-amber">バナー制作</span></div>
+          <h3 class="w-title">オンライン英会話サービスの<br>LPデザイン＆広告バナー制作</h3>
+          <p class="w-desc">20〜40代の社会人をターゲットにLPを一から設計。成約率向上を意識したコピーとブランドカラーを活かした広告バナーを制作しました。</p>
+          <div class="w-footer"><div></div><div class="w-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg></div></div>
+        </div>
+      </div>
+
+      <!-- Card 2 -->
+      <div class="w-card show" style="transition-delay:.08s">
+        <div class="w-thumb">
+          <div class="w-thumb-bg" style="background:none;">
+            <img src="port_sozai/everuday_okashi.png" alt="コンビニスイーツSNS運用" style="width:100%;height:100%;object-fit:cover;display:block;">
+          </div>
+          <div class="w-thumb-overlay"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+        </div>
+        <div class="w-body">
+          <div class="w-tags"><span class="w-tag tag-teal">SNS運用</span><span class="w-tag tag-green">投稿デザイン</span></div>
+          <h3 class="w-title">大手コンビニスイーツ紹介<br>SNSアカウントの運用</h3>
+          <p class="w-desc">プロフィール設計から投稿デザインまでトータルで担当。ブランドの世界観を統一しながら、エンゲージメント率向上を実現するコンテンツを継続制作しました。</p>
+          <div class="w-footer"><div></div><div class="w-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg></div></div>
+        </div>
+      </div>
+
+      <!-- Card 3 -->
+      <div class="w-card show" style="transition-delay:.04s">
+        <div class="w-thumb">
+          <div class="w-thumb-bg" style="background:none;">
+            <img src="port_sozai/logo.png" alt="ロゴデザイン" style="width:100%;height:100%;object-fit:cover;display:block;">
+          </div>
+          <div class="w-thumb-overlay"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+        </div>
+        <div class="w-body">
+          <div class="w-tags"><span class="w-tag tag-violet">ロゴデザイン</span><span class="w-tag tag-pink">ブランディング</span></div>
+          <h3 class="w-title">ブランドの顔となる<br>ロゴデザイン制作</h3>
+          <p class="w-desc">ブランドのコンセプトや世界観を丁寧にヒアリングし、ターゲット層に刺さるロゴを制作。使用シーンに合わせた複数バリエーションを納品しました。</p>
+          <div class="w-footer"><div></div><div class="w-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg></div></div>
+        </div>
+      </div>
+
+      <!-- Card 4 -->
+      <div class="w-card show" style="transition-delay:.12s">
+        <div class="w-thumb">
+          <div class="w-thumb-bg" style="background:none;">
+            <img src="port_sozai/youtube.png" alt="YouTubeサムネイル制作" style="width:100%;height:100%;object-fit:cover;display:block;">
+          </div>
+          <div class="w-thumb-overlay"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+        </div>
+        <div class="w-body">
+          <div class="w-tags"><span class="w-tag tag-coral">YouTube</span><span class="w-tag tag-amber">サムネイル</span></div>
+          <h3 class="w-title">YouTube用<br>サムネイル画像制作</h3>
+          <p class="w-desc">クリック率（CTR）向上を最優先に設計。思わず目を止めてしまう訴求力の高いサムネイルを多数制作。数字・文字・ビジュアルの最適バランスを追求しました。</p>
+          <div class="w-footer"><div></div><div class="w-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ④ Contact -->
+  <section id="contact">
+    <div class="contact-wrap">
+      <div class="show">
+        <span class="s-label violet">Contact</span>
+        <h2 class="contact-hl">お仕事の<br>ご相談は<br><span class="c-coral">こちらへ。</span></h2>
+        <p class="contact-note">SNS運用・LPデザイン・バナー制作など、<br>お気軽にお問い合わせください。<br>2営業日以内にご返信いたします。</p>
+        <div class="c-row">
+          <div class="c-ico coral"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
+          <div class="c-info"><strong>メール</strong><span>your.email@example.com</span></div>
+        </div>
+        <div class="c-row">
+          <div class="c-ico teal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg></div>
+          <div class="c-info"><strong>Instagram</strong><span>@your_handle</span></div>
+        </div>
+      </div>
+
+      <div class="form-box show" style="transition-delay:.12s">
+        <form>
+          <div class="row2">
+            <div class="fg"><label>お名前<span class="req">*</span></label><input type="text" class="fc" placeholder="山田 花子"></div>
+            <div class="fg"><label>メールアドレス<span class="req">*</span></label><input type="email" class="fc" placeholder="your@email.com"></div>
+          </div>
+          <div class="fg">
+            <label>ご相談内容<span class="req">*</span></label>
+            <select class="fc">
+              <option value="" disabled selected>選択してください</option>
+              <option value="sns">SNS運用</option>
+              <option value="lp">LPデザイン</option>
+              <option value="image">画像制作</option>
+              <option value="other">その他</option>
+            </select>
+          </div>
+          <div class="fg"><label>メッセージ本文<span class="req">*</span></label><textarea class="fc" placeholder="ご依頼の詳細・ご予算・希望納期などをお気軽にご記入ください。"></textarea></div>
+          <button type="submit" class="sub-btn">送信する<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="ft-logo">
+      <div class="ft-logo-mark"></div>
+      <span class="ft-logo-txt">DC Creator</span>
+    </div>
+    <ul class="ft-nav">
+      <li><a href="#about">About</a></li>
+      <li><a href="#works">Works</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+    <small>© 2025 Digital Content Creator. All rights reserved.</small>
+  </footer>
+
+  <script>
+    const io = new IntersectionObserver(
+      entries => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('in'); }),
+      { threshold: 0.12, rootMargin: '0px 0px -40px 0px' }
+    );
+    document.querySelectorAll('.show').forEach(el => io.observe(el));
+    window.addEventListener('scroll', () => {
+      document.querySelector('nav').style.boxShadow =
+        window.scrollY > 30 ? '0 2px 20px rgba(0,0,0,0.06)' : '';
+    }, { passive: true });
+  </script>
+</body>
+</html>
