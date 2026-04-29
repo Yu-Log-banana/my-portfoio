@@ -1,1 +1,1466 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Yu-Log Design</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    :root {
+      --bg: #f5f4f0;
+      --fg: #1a1a1a;
+      --line: #d0cfc9;
+      --muted: #888;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ============================================================
+       LOADING SCREEN
+    ============================================================ */
+    #loader {
+      position: fixed;
+      inset: 0;
+      background: var(--fg);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.6s ease, visibility 0.6s ease;
+    }
+    #loader.hidden { opacity: 0; visibility: hidden; }
+
+    .loader-text {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.3em;
+      color: var(--bg);
+      overflow: hidden;
+    }
+    .loader-text span {
+      display: inline-block;
+      animation: loaderChar 0.05s steps(1) forwards;
+      opacity: 0;
+    }
+    @keyframes loaderChar {
+      to { opacity: 1; }
+    }
+
+    .loader-bar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      height: 2px;
+      background: var(--bg);
+      width: 0%;
+      animation: loaderBar 1.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+    @keyframes loaderBar {
+      0%   { width: 0%; }
+      60%  { width: 80%; }
+      100% { width: 100%; }
+    }
+
+    /* ============================================================
+       CURSOR (custom)
+    ============================================================ */
+    .cursor-dot {
+      width: 6px; height: 6px;
+      background: var(--fg);
+      border-radius: 50%;
+      position: fixed;
+      pointer-events: none;
+      z-index: 8000;
+      transform: translate(-50%, -50%);
+      transition: transform 0.08s ease, background 0.2s ease;
+    }
+    .cursor-ring {
+      width: 32px; height: 32px;
+      border: 1px solid var(--fg);
+      border-radius: 50%;
+      position: fixed;
+      pointer-events: none;
+      z-index: 7999;
+      transform: translate(-50%, -50%);
+      transition: width 0.3s ease, height 0.3s ease, border-color 0.3s ease;
+    }
+    .cursor-ring.expand { width: 56px; height: 56px; border-color: #aaa; }
+    body * { cursor: none; }
+
+    /* ============================================================
+       HEADER
+    ============================================================ */
+    header {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 22px 40px;
+      background: var(--bg);
+    }
+
+    header::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0;
+      height: 1px;
+      background: var(--line);
+      width: 0%;
+      animation: headerLine 1s 1.8s cubic-bezier(0.4,0,0.2,1) forwards;
+    }
+    @keyframes headerLine { to { width: 100%; } }
+
+    .logo {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-decoration: none;
+      color: var(--fg);
+      opacity: 0;
+      animation: fadeDown 0.7s 1.9s ease forwards;
+    }
+
+    nav {
+      display: flex;
+      gap: 36px;
+    }
+
+    nav a {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-decoration: none;
+      color: var(--fg);
+      position: relative;
+      opacity: 0;
+      animation: fadeDown 0.7s ease forwards;
+    }
+    nav a:nth-child(1) { animation-delay: 2.0s; }
+    nav a:nth-child(2) { animation-delay: 2.1s; }
+    nav a:nth-child(3) { animation-delay: 2.2s; }
+
+    nav a::after {
+      content: '';
+      position: absolute;
+      bottom: -2px; left: 0;
+      height: 1px;
+      background: var(--fg);
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+    nav a:hover::after { width: 100%; }
+
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ============================================================
+       LAYOUT
+    ============================================================ */
+    .page-wrapper {
+      padding-top: 70px;
+      display: flex;
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      width: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 0;
+      flex-shrink: 0;
+    }
+    .sidebar-text {
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
+      font-size: 9px;
+      letter-spacing: 0.2em;
+      color: var(--muted);
+      font-weight: 500;
+      white-space: nowrap;
+      opacity: 0;
+      animation: fadeIn 1s 2.4s ease forwards;
+    }
+
+    .main-content {
+      flex: 1;
+      padding: 0 40px 0 12px;
+    }
+
+    /* ============================================================
+       TOP SECTION
+    ============================================================ */
+    .top-section {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      border-top: 1px solid var(--line);
+      padding-top: 52px;
+      min-height: calc(100vh - 70px);
+      align-items: start;
+    }
+
+    /* --- HERO --- */
+    .hero {
+      padding-right: 48px;
+      padding-bottom: 60px;
+      border-right: 1px solid var(--line);
+      overflow: hidden;
+    }
+
+    .hero h1 {
+      font-size: 52px;
+      font-weight: 700;
+      line-height: 1.12;
+      letter-spacing: -0.01em;
+      margin-bottom: 20px;
+    }
+
+    .hero-word {
+      display: block;
+      overflow: hidden;
+    }
+    .hero-word span {
+      display: block;
+      transform: translateY(110%);
+      animation: slideUp 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    .hero-word:nth-child(1) span { animation-delay: 2.0s; }
+    .hero-word:nth-child(2) span { animation-delay: 2.15s; }
+    .hero-word:nth-child(3) span { animation-delay: 2.3s; }
+
+    @keyframes slideUp {
+      to { transform: translateY(0); }
+    }
+
+    .hero-sub {
+      font-size: 12px;
+      color: #666;
+      letter-spacing: 0.04em;
+      opacity: 0;
+      animation: fadeIn 1s 2.6s ease forwards;
+    }
+
+    /* --- WORKS --- */
+    .works-panel {
+      padding-left: 48px;
+      padding-bottom: 60px;
+    }
+
+    .section-heading {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      margin-bottom: 28px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      opacity: 0;
+    }
+    .section-heading .arrow {
+      font-weight: 400;
+      transition: transform 0.3s ease;
+    }
+    .section-heading:hover .arrow { transform: translateX(6px); }
+
+    .works-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 28px 20px;
+    }
+
+    .work-card {
+      cursor: none;
+      overflow: hidden;
+    }
+
+    .work-card {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+
+    .work-card-img {
+      width: 100%;
+      aspect-ratio: 4/3;
+      display: block;
+      margin-bottom: 10px;
+      overflow: hidden;
+      position: relative;
+      background: #e8e6e0;
+    }
+
+    .work-card-img-inner {
+      width: 100%;
+      height: 100%;
+      transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+      overflow: hidden;
+    }
+
+    .work-card-img-inner img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .work-card:hover .work-card-img-inner { transform: scale(1.06); }
+
+    .work-card-img::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.12) 50%, transparent 70%);
+      transform: translateX(-100%);
+      transition: transform 0s;
+    }
+    .work-card:hover .work-card-img::after {
+      transform: translateX(100%);
+      transition: transform 0.6s ease;
+    }
+
+    .work-title {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      margin-bottom: 3px;
+      transition: opacity 0.2s;
+    }
+    .work-tags {
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 0.04em;
+    }
+
+    /* ============================================================
+       BOTTOM SECTION
+    ============================================================ */
+    .bottom-section {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      border-top: 1px solid var(--line);
+    }
+
+    /* --- ABOUT --- */
+    .about-panel {
+      padding: 52px 48px 60px 0;
+      border-right: 1px solid var(--line);
+    }
+
+    .about-inner {
+      display: flex;
+      gap: 24px;
+      align-items: flex-start;
+    }
+
+    .about-photo {
+      width: 90px;
+      height: 110px;
+      flex-shrink: 0;
+      border-radius: 2px;
+      overflow: hidden;
+      position: relative;
+    }
+    .about-photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .about-photo::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: var(--bg);
+      transform: scaleX(1);
+      transform-origin: right;
+      transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .about-photo.revealed::after { transform: scaleX(0); }
+
+    .about-text-block { flex: 1; }
+
+    .about-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      margin-bottom: 16px;
+      opacity: 0;
+    }
+    .about-body {
+      font-size: 11.5px;
+      line-height: 1.85;
+      color: #444;
+      margin-bottom: 20px;
+      opacity: 0;
+    }
+    .more-link {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-decoration: none;
+      color: var(--fg);
+      border-bottom: 1px solid var(--fg);
+      padding-bottom: 1px;
+      position: relative;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .more-link:hover { opacity: 0.5; }
+
+    /* --- CONTACT --- */
+    .contact-panel {
+      padding: 52px 0 60px 48px;
+    }
+
+    .contact-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      margin-bottom: 16px;
+      opacity: 0;
+    }
+    .contact-body {
+      font-size: 11.5px;
+      line-height: 1.85;
+      color: #444;
+      margin-bottom: 24px;
+      opacity: 0;
+    }
+
+    .contact-btn {
+      display: inline-block;
+      background: var(--fg);
+      color: var(--bg);
+      font-size: 10.5px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      padding: 14px 28px;
+      text-decoration: none;
+      border-radius: 2px;
+      position: relative;
+      overflow: hidden;
+      opacity: 0;
+      transition: color 0.35s ease;
+    }
+    .contact-btn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: #444;
+      transform: translateX(-101%);
+      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .contact-btn:hover::before { transform: translateX(0); }
+    .contact-btn span { position: relative; z-index: 1; }
+
+    /* ============================================================
+       FOOTER
+    ============================================================ */
+    footer {
+      border-top: 1px solid var(--line);
+      padding: 28px 0;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      opacity: 0;
+    }
+
+    .social-link {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-decoration: none;
+      color: var(--fg);
+      transition: transform 0.25s ease, opacity 0.2s ease;
+      display: inline-block;
+    }
+    .social-link:hover { transform: translateY(-3px); opacity: 0.5; }
+
+    /* ============================================================
+       SCROLL-REVEAL UTILITY
+    ============================================================ */
+    .reveal {
+      opacity: 0;
+      transform: translateY(28px);
+      transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+                  transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @keyframes fadeIn {
+      to { opacity: 1; }
+    }
+
+    /* ============================================================
+       NOISE TEXTURE OVERLAY
+    ============================================================ */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 5000;
+      opacity: 0.025;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      background-size: 200px 200px;
+      animation: grainShift 0.15s steps(1) infinite;
+    }
+    @keyframes grainShift {
+      0%  { background-position: 0 0; }
+      25% { background-position: 40px -20px; }
+      50% { background-position: -30px 10px; }
+      75% { background-position: 20px 30px; }
+    }
+
+    /* ============================================================
+       MODAL
+    ============================================================ */
+    .modal {
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+    .modal.active {
+      opacity: 1;
+      visibility: visible;
+    }
+    .modal-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(10, 10, 10, 0.88);
+    }
+    .modal-inner {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      max-width: 90vw;
+      max-height: 90vh;
+    }
+    .modal-close {
+      position: absolute;
+      top: -44px;
+      right: -4px;
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 22px;
+      line-height: 1;
+      padding: 8px 12px;
+      letter-spacing: 0.05em;
+      font-family: inherit;
+      opacity: 0.7;
+      transition: opacity 0.2s;
+    }
+    .modal-close:hover { opacity: 1; }
+    #modalImg {
+      display: block;
+      max-width: 88vw;
+      max-height: 78vh;
+      object-fit: contain;
+      border-radius: 2px;
+    }
+    .modal-info {
+      margin-top: 14px;
+      text-align: center;
+      color: #fff;
+    }
+    .modal-title {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+    }
+    .modal-desc {
+      font-size: 11px;
+      color: #aaa;
+      margin-top: 4px;
+      letter-spacing: 0.05em;
+    }
+
+    /* ============================================================
+       RESPONSIVE
+    ============================================================ */
+    @media (max-width: 768px) {
+      .cursor-dot, .cursor-ring { display: none; }
+      body * { cursor: auto; }
+      .work-card { cursor: pointer; }
+      .modal-close { cursor: pointer; }
+      header { padding: 18px 20px; }
+      .main-content { padding: 0 20px 0 8px; }
+      .top-section, .bottom-section { grid-template-columns: 1fr; }
+      .hero { border-right: none; padding-right: 0; }
+      .works-panel { padding-left: 0; }
+      .about-panel { border-right: none; padding-right: 0; }
+      .contact-panel { padding-left: 0; }
+      .hero h1 { font-size: 36px; }
+    }
+
+    /* ============================================================
+       CONTACT MODAL
+    ============================================================ */
+    .contact-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 10001;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.35s ease, visibility 0.35s ease;
+    }
+    .contact-modal.active {
+      opacity: 1;
+      visibility: visible;
+    }
+    .contact-modal-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(10, 10, 10, 0.8);
+    }
+    .contact-modal-inner {
+      position: relative;
+      z-index: 1;
+      background: var(--bg);
+      width: 90vw;
+      max-width: 520px;
+      max-height: 88vh;
+      overflow-y: auto;
+      padding: 48px 44px 44px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--line) transparent;
+    }
+    .contact-modal-inner::-webkit-scrollbar { width: 4px; }
+    .contact-modal-inner::-webkit-scrollbar-track { background: transparent; }
+    .contact-modal-inner::-webkit-scrollbar-thumb { background: var(--line); }
+
+    .contact-modal-close {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: none;
+      border: none;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      color: var(--fg);
+      font-family: inherit;
+      opacity: 0.4;
+      transition: opacity 0.2s;
+      padding: 4px 8px;
+    }
+    .contact-modal-close:hover { opacity: 1; }
+
+    .cf-heading {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      margin-bottom: 8px;
+    }
+    .cf-subheading {
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 0.04em;
+      margin-bottom: 28px;
+      line-height: 1.8;
+    }
+    .cf-required-note {
+      font-size: 10px;
+      color: #aaa;
+      letter-spacing: 0.06em;
+      margin-bottom: 32px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .cf-field { margin-bottom: 28px; }
+
+    .cf-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      color: var(--fg);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+    .cf-required-mark {
+      font-size: 9px;
+      color: #aaa;
+      font-weight: 400;
+      letter-spacing: 0;
+    }
+
+    .cf-name-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .cf-sublabel {
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .cf-field input[type="text"],
+    .cf-field textarea {
+      width: 100%;
+      border: none;
+      border-bottom: 1px solid var(--line);
+      background: transparent;
+      padding: 8px 0;
+      font-size: 12px;
+      color: var(--fg);
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.25s ease;
+      border-radius: 0;
+      -webkit-appearance: none;
+    }
+    .cf-field input[type="text"]:focus,
+    .cf-field textarea:focus { border-color: var(--fg); }
+    .cf-field input[type="text"]::placeholder,
+    .cf-field textarea::placeholder { color: #ccc; font-size: 11px; }
+    .cf-field textarea {
+      resize: vertical;
+      min-height: 100px;
+      line-height: 1.8;
+      margin-top: 4px;
+    }
+
+    /* カスタムチェックボックス */
+    .cf-checkbox-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px 20px;
+    }
+    .cf-checkbox-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .cf-checkbox-item input[type="checkbox"] {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .cf-checkbox-box {
+      width: 14px;
+      height: 14px;
+      border: 1px solid var(--line);
+      flex-shrink: 0;
+      margin-top: 2px;
+      position: relative;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .cf-checkbox-item input[type="checkbox"]:checked + .cf-checkbox-box {
+      background: var(--fg);
+      border-color: var(--fg);
+    }
+    .cf-checkbox-box::after {
+      content: '';
+      position: absolute;
+      top: 1px; left: 4px;
+      width: 4px; height: 7px;
+      border: 1.5px solid var(--bg);
+      border-top: none;
+      border-left: none;
+      transform: rotate(43deg) scaleY(0);
+      transform-origin: bottom center;
+      transition: transform 0.15s ease;
+    }
+    .cf-checkbox-item input[type="checkbox"]:checked + .cf-checkbox-box::after {
+      transform: rotate(43deg) scaleY(1);
+    }
+    .cf-checkbox-label {
+      font-size: 11px;
+      line-height: 1.55;
+      color: #444;
+      letter-spacing: 0.03em;
+    }
+
+    /* 送信ボタン */
+    .cf-submit-wrap {
+      margin-top: 36px;
+      padding-top: 28px;
+      border-top: 1px solid var(--line);
+    }
+    .cf-submit {
+      display: block;
+      width: 100%;
+      background: var(--fg);
+      color: var(--bg);
+      font-size: 10.5px;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      padding: 16px 36px;
+      border: none;
+      font-family: inherit;
+      position: relative;
+      overflow: hidden;
+      transition: color 0.35s ease;
+    }
+    .cf-submit::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: #444;
+      transform: translateX(-101%);
+      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .cf-submit:hover::before { transform: translateX(0); }
+    .cf-submit span { position: relative; z-index: 1; }
+
+    .cf-powered {
+      font-size: 9px;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+      text-decoration: none;
+      display: block;
+      text-align: center;
+      margin-top: 16px;
+      opacity: 0.4;
+      transition: opacity 0.2s;
+    }
+    .cf-powered:hover { opacity: 0.8; }
+
+    @media (max-width: 768px) {
+      .contact-modal-inner { padding: 40px 24px 36px; }
+      .cf-checkbox-grid { grid-template-columns: 1fr; }
+      .cf-checkbox-item { cursor: pointer; }
+      .cf-submit { cursor: pointer; }
+      .contact-modal-close { cursor: pointer; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- CUSTOM CURSOR -->
+  <div class="cursor-dot" id="cursorDot"></div>
+  <div class="cursor-ring" id="cursorRing"></div>
+
+  <!-- LOADING SCREEN -->
+  <div id="loader">
+    <div class="loader-text" id="loaderText"></div>
+    <div class="loader-bar"></div>
+  </div>
+
+  <!-- MODAL -->
+  <div id="modal" class="modal">
+    <div class="modal-overlay" id="modalOverlay"></div>
+    <div class="modal-inner">
+      <button class="modal-close" id="modalClose">CLOSE ×</button>
+      <img id="modalImg" src="" alt="" />
+      <div class="modal-info">
+        <div class="modal-title" id="modalTitle"></div>
+        <div class="modal-desc" id="modalDesc"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTACT MODAL -->
+  <div id="contactModal" class="contact-modal">
+    <div class="contact-modal-overlay" id="contactModalOverlay"></div>
+    <div class="contact-modal-inner">
+      <button class="contact-modal-close" id="contactModalClose">CLOSE ×</button>
+
+      <div class="cf-heading">CONTACT</div>
+      <p class="cf-subheading">お気軽にご相談ください。<br>制作のご依頼・お見積もりをお待ちしております。</p>
+      <p class="cf-required-note">* は必須項目です</p>
+
+      <form action="https://ssl.form-mailer.jp/fm/service/Forms/confirm" method="post" name="form1" enctype="multipart/form-data" accept-charset="UTF-8">
+        <input type="hidden" name="key" value="2128c326880839">
+        <input type="hidden" name="code" value="utf8">
+
+        <!-- 名前 -->
+        <div class="cf-field">
+          <div class="cf-label">名前 <span class="cf-required-mark">* 必須</span></div>
+          <div class="cf-name-row">
+            <div>
+              <span class="cf-sublabel">姓</span>
+              <input name="field_7706734_sei" type="text" placeholder="例：山田">
+            </div>
+            <div>
+              <span class="cf-sublabel">名</span>
+              <input name="field_7706734_mei" type="text" placeholder="例：太郎">
+            </div>
+          </div>
+        </div>
+
+        <!-- 名前カナ -->
+        <div class="cf-field">
+          <div class="cf-label">名前（カナ） <span class="cf-required-mark">* 必須</span></div>
+          <div class="cf-name-row">
+            <div>
+              <span class="cf-sublabel">セイ</span>
+              <input name="field_7706740_sei" type="text" placeholder="例：ヤマダ">
+            </div>
+            <div>
+              <span class="cf-sublabel">メイ</span>
+              <input name="field_7706740_mei" type="text" placeholder="例：タロウ">
+            </div>
+          </div>
+        </div>
+
+        <!-- メールアドレス -->
+        <div class="cf-field">
+          <div class="cf-label">メールアドレス <span class="cf-required-mark">* 必須</span></div>
+          <input name="field_7706735" type="text" placeholder="info@example.com">
+          <input name="field_7706735_mcon" type="text" placeholder="確認用（再入力）" style="margin-top:12px;">
+        </div>
+
+        <!-- ご依頼内容 -->
+        <div class="cf-field">
+          <div class="cf-label">ご依頼内容 <span class="cf-required-mark">* 必須</span></div>
+          <div class="cf-checkbox-grid">
+            <label class="cf-checkbox-item">
+              <input name="field_7706826" type="checkbox" value="0">
+              <span class="cf-checkbox-box"></span>
+              <span class="cf-checkbox-label">画像作成<br><small style="color:#bbb;font-size:10px;">サムネイル・SNS広告・バナー等</small></span>
+            </label>
+            <label class="cf-checkbox-item">
+              <input name="field_7706826" type="checkbox" value="1">
+              <span class="cf-checkbox-box"></span>
+              <span class="cf-checkbox-label">ロゴデザイン</span>
+            </label>
+            <label class="cf-checkbox-item">
+              <input name="field_7706826" type="checkbox" value="2">
+              <span class="cf-checkbox-box"></span>
+              <span class="cf-checkbox-label">WEBデザイン</span>
+            </label>
+            <label class="cf-checkbox-item">
+              <input name="field_7706826" type="checkbox" value="3">
+              <span class="cf-checkbox-box"></span>
+              <span class="cf-checkbox-label">名刺作成</span>
+            </label>
+            <label class="cf-checkbox-item">
+              <input name="field_7706826" type="checkbox" value="4">
+              <span class="cf-checkbox-box"></span>
+              <span class="cf-checkbox-label">動画作成／編集</span>
+            </label>
+            <label class="cf-checkbox-item">
+              <input name="field_7706826" type="checkbox" value="5">
+              <span class="cf-checkbox-box"></span>
+              <span class="cf-checkbox-label">ライティング</span>
+            </label>
+            <label class="cf-checkbox-item">
+              <input name="field_7706826" type="checkbox" value="6">
+              <span class="cf-checkbox-box"></span>
+              <span class="cf-checkbox-label">Instagram運用</span>
+            </label>
+            <label class="cf-checkbox-item">
+              <input name="field_7706826" type="checkbox" value="7">
+              <span class="cf-checkbox-box"></span>
+              <span class="cf-checkbox-label">Instagram PR活動</span>
+            </label>
+            <label class="cf-checkbox-item">
+              <input name="field_7706826" type="checkbox" value="8">
+              <span class="cf-checkbox-box"></span>
+              <span class="cf-checkbox-label">その他</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- お問い合わせ内容 -->
+        <div class="cf-field">
+          <div class="cf-label">お問い合わせ内容</div>
+          <textarea name="field_7706824" placeholder="お問い合わせの内容をご入力ください。"></textarea>
+        </div>
+
+        <div class="cf-submit-wrap">
+          <button name="submit" type="submit" class="cf-submit"><span>確認画面へ →</span></button>
+          <a href="https://www.form-mailer.jp/" target="_blank" rel="noopener" class="cf-powered">Powered by FormMailer.</a>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <!-- HEADER -->
+  <header>
+    <a href="#" class="logo">Yu-Log Design</a>
+    <nav>
+      <a href="#about">ABOUT</a>
+      <a href="#works">WORKS</a>
+      <a href="#contact">CONTACT</a>
+    </nav>
+  </header>
+
+  <!-- PAGE WRAPPER -->
+  <div class="page-wrapper">
+
+    <!-- VERTICAL SIDEBAR -->
+    <aside class="sidebar">
+      <span class="sidebar-text">WEB DESIGNER / FRONTEND DEVELOPER</span>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main-content">
+
+      <!-- TOP: HERO + WORKS -->
+      <div class="top-section">
+
+        <!-- HERO -->
+        <section class="hero">
+          <h1>
+            <span class="hero-word"><span>Design</span></span>
+            <span class="hero-word"><span>makes</span></span>
+            <span class="hero-word"><span>life better.</span></span>
+          </h1>
+          <p class="hero-sub">Webデザインで、より良い世界を。</p>
+        </section>
+
+        <!-- WORKS -->
+        <section class="works-panel" id="works">
+          <div class="section-heading reveal">WORKS <span class="arrow">→</span></div>
+          <div class="works-grid">
+
+            <div class="work-card reveal"
+                 data-img="port_element/001010.png"
+                 data-title="YouTube用サムネイル"
+                 data-desc="副業チャンネル（推進偏）">
+              <div class="work-card-img">
+                <div class="work-card-img-inner">
+                  <img src="port_element/001010.png" alt="YouTube用サムネイル 副業チャンネル（推進偏）" />
+                </div>
+              </div>
+              <div class="work-title">YouTube用サムネイル</div>
+              <div class="work-tags">副業チャンネル（推進偏）</div>
+            </div>
+
+            <div class="work-card reveal"
+                 data-img="port_element/001020.png"
+                 data-title="YouTube用サムネイル"
+                 data-desc="副業チャンネル（方法偏）">
+              <div class="work-card-img">
+                <div class="work-card-img-inner">
+                  <img src="port_element/001020.png" alt="YouTube用サムネイル 副業チャンネル（方法偏）" />
+                </div>
+              </div>
+              <div class="work-title">YouTube用サムネイル</div>
+              <div class="work-tags">副業チャンネル（方法偏）</div>
+            </div>
+
+            <div class="work-card reveal"
+                 data-img="port_element/001030.png"
+                 data-title="YouTube用サムネイル"
+                 data-desc="副業チャンネル（警笛偏）">
+              <div class="work-card-img">
+                <div class="work-card-img-inner">
+                  <img src="port_element/001030.png" alt="YouTube用サムネイル 副業チャンネル（警笛偏）" />
+                </div>
+              </div>
+              <div class="work-title">YouTube用サムネイル</div>
+              <div class="work-tags">副業チャンネル（警笛偏）</div>
+            </div>
+
+            <div class="work-card reveal"
+                 data-img="port_element/002010.png"
+                 data-title="Instagram広告"
+                 data-desc="「English Now」英語スクール（推奨偏）">
+              <div class="work-card-img">
+                <div class="work-card-img-inner">
+                  <img src="port_element/002010.png" alt="Instagram広告 English Now 推奨偏" />
+                </div>
+              </div>
+              <div class="work-title">Instagram広告</div>
+              <div class="work-tags">「English Now」英語スクール（推奨偏）</div>
+            </div>
+
+            <div class="work-card reveal"
+                 data-img="port_element/002020.png"
+                 data-title="Instagram広告"
+                 data-desc="「English Now」英語スクール（悩み解決偏）">
+              <div class="work-card-img">
+                <div class="work-card-img-inner">
+                  <img src="port_element/002020.png" alt="Instagram広告 English Now 悩み解決偏" />
+                </div>
+              </div>
+              <div class="work-title">Instagram広告</div>
+              <div class="work-tags">「English Now」英語スクール（悩み解決偏）</div>
+            </div>
+
+            <div class="work-card reveal"
+                 data-img="port_element/003010.png"
+                 data-title="Instagram広告"
+                 data-desc="Instagram運用実績">
+              <div class="work-card-img">
+                <div class="work-card-img-inner">
+                  <img src="port_element/003010.png" alt="Instagram広告 運用実績" />
+                </div>
+              </div>
+              <div class="work-title">Instagram広告</div>
+              <div class="work-tags">Instagram運用実績</div>
+            </div>
+
+            <div class="work-card reveal"
+                 data-img="port_element/004010.png"
+                 data-title="オリジナルキャラ作成"
+                 data-desc="グリーンチンパン">
+              <div class="work-card-img">
+                <div class="work-card-img-inner">
+                  <img src="port_element/004010.png" alt="オリジナルキャラ グリーンチンパン" />
+                </div>
+              </div>
+              <div class="work-title">オリジナルキャラ作成</div>
+              <div class="work-tags">グリーンチンパン</div>
+            </div>
+
+            <div class="work-card reveal"
+                 data-img="port_element/005010.png"
+                 data-title="ロゴ作成"
+                 data-desc="「EnglishNow」英語スクール（高級感の演出）">
+              <div class="work-card-img">
+                <div class="work-card-img-inner">
+                  <img src="port_element/005010.png" alt="ロゴ作成 EnglishNow 高級感" />
+                </div>
+              </div>
+              <div class="work-title">ロゴ作成</div>
+              <div class="work-tags">「EnglishNow」英語スクール（高級感の演出）</div>
+            </div>
+
+            <div class="work-card reveal"
+                 data-img="port_element/005020.png"
+                 data-title="ロゴ作成"
+                 data-desc="「EnglishNow」英語スクール（スタイリッシュの演出）">
+              <div class="work-card-img">
+                <div class="work-card-img-inner">
+                  <img src="port_element/005020.png" alt="ロゴ作成 EnglishNow スタイリッシュ" />
+                </div>
+              </div>
+              <div class="work-title">ロゴ作成</div>
+              <div class="work-tags">「EnglishNow」英語スクール（スタイリッシュの演出）</div>
+            </div>
+
+            <div class="work-card reveal"
+                 data-img="port_element/005030.png"
+                 data-title="ロゴ作成"
+                 data-desc="「EnglishNow」英語スクール（スタイリッシュと柔らかさの演出）">
+              <div class="work-card-img">
+                <div class="work-card-img-inner">
+                  <img src="port_element/005030.png" alt="ロゴ作成 EnglishNow スタイリッシュ×柔らかさ" />
+                </div>
+              </div>
+              <div class="work-title">ロゴ作成</div>
+              <div class="work-tags">「EnglishNow」英語スクール（スタイリッシュと柔らかさの演出）</div>
+            </div>
+
+            <div class="work-card reveal"
+                 data-img="port_element/005040.png"
+                 data-title="ロゴ作成"
+                 data-desc="「Lumiere」女性専用エステサロン">
+              <div class="work-card-img">
+                <div class="work-card-img-inner">
+                  <img src="port_element/005040.png" alt="ロゴ作成 Lumiere エステサロン" />
+                </div>
+              </div>
+              <div class="work-title">ロゴ作成</div>
+              <div class="work-tags">「Lumiere」女性専用エステサロン</div>
+            </div>
+
+            <div class="work-card reveal"
+                 data-img="port_element/005050.png"
+                 data-title="ロゴ作成"
+                 data-desc="「彩筆堂」筆専門店">
+              <div class="work-card-img">
+                <div class="work-card-img-inner">
+                  <img src="port_element/005050.png" alt="ロゴ作成 彩筆堂" />
+                </div>
+              </div>
+              <div class="work-title">ロゴ作成</div>
+              <div class="work-tags">「彩筆堂」筆専門店</div>
+            </div>
+
+            <div class="work-card reveal"
+                 data-img="port_element/006010.png"
+                 data-title="LPデザイン"
+                 data-desc="「Global English Online」">
+              <div class="work-card-img">
+                <div class="work-card-img-inner">
+                  <img src="port_element/006010.png" alt="LPデザイン Global English Online" />
+                </div>
+              </div>
+              <div class="work-title">LPデザイン</div>
+              <div class="work-tags">「Global English Online」</div>
+            </div>
+
+          </div>
+        </section>
+
+      </div>
+
+      <!-- BOTTOM: ABOUT + CONTACT -->
+      <div class="bottom-section">
+
+        <!-- ABOUT -->
+        <section class="about-panel" id="about">
+          <div class="about-inner">
+            <div class="about-photo" id="aboutPhoto">
+              <img src="chara/a1.png" alt="Yu-Log" />
+            </div>
+            <div class="about-text-block">
+              <div class="about-label reveal">ABOUT</div>
+              <p class="about-body reveal">
+                はじめまして、Yu-Logです。<br>
+                人を惹き付けるデザインとライティングで<br>
+                世界観を演出し、<br>
+                力のあるメディア創りをします。
+              </p>
+              <a href="#" class="more-link reveal">MORE ABOUT ME</a>
+            </div>
+          </div>
+        </section>
+
+        <!-- CONTACT -->
+        <section class="contact-panel" id="contact">
+          <div class="contact-label reveal">CONTACT</div>
+          <p class="contact-body reveal">
+            お気軽にご連絡ください。<br>
+            制作のご相談・お見積もりなど、<br>
+            お待ちしております。
+          </p>
+          <a href="#" id="contactBtn" class="contact-btn reveal">
+            <span>お気軽にご連絡ください（連絡はこちら）</span>
+          </a>
+        </section>
+
+      </div>
+
+      <!-- FOOTER -->
+      <footer class="reveal">
+        <a href="#" class="social-link">𝕏</a>
+        <a href="#" class="social-link">in</a>
+        <a href="#" class="social-link">◎</a>
+      </footer>
+
+    </main>
+  </div>
+
+  <script>
+    /* =============================================
+       LOADER — typewriter effect then fade out
+    ============================================= */
+    (function () {
+      const loaderEl = document.getElementById('loader');
+      const textEl   = document.getElementById('loaderText');
+      const word     = 'Yu-Log Design';
+      let i = 0;
+
+      function type() {
+        if (i < word.length) {
+          const s = document.createElement('span');
+          s.textContent = word[i];
+          s.style.animationDelay = (i * 80) + 'ms';
+          textEl.appendChild(s);
+          i++;
+          setTimeout(type, 80);
+        }
+      }
+      type();
+
+      setTimeout(() => {
+        loaderEl.classList.add('hidden');
+        document.body.style.overflow = '';
+      }, 1700);
+    })();
+
+    /* =============================================
+       CUSTOM CURSOR
+    ============================================= */
+    (function () {
+      const dot  = document.getElementById('cursorDot');
+      const ring = document.getElementById('cursorRing');
+      let rx = 0, ry = 0, mx = 0, my = 0;
+
+      document.addEventListener('mousemove', e => {
+        mx = e.clientX; my = e.clientY;
+        dot.style.left = mx + 'px';
+        dot.style.top  = my + 'px';
+      });
+
+      function animate() {
+        rx += (mx - rx) * 0.12;
+        ry += (my - ry) * 0.12;
+        ring.style.left = rx + 'px';
+        ring.style.top  = ry + 'px';
+        requestAnimationFrame(animate);
+      }
+      animate();
+
+      const hoverTargets = 'a, button, .work-card';
+      document.querySelectorAll(hoverTargets).forEach(el => {
+        el.addEventListener('mouseenter', () => ring.classList.add('expand'));
+        el.addEventListener('mouseleave', () => ring.classList.remove('expand'));
+      });
+    })();
+
+    /* =============================================
+       INTERSECTION OBSERVER — scroll reveal
+    ============================================= */
+    (function () {
+      const revealEls = document.querySelectorAll('.reveal');
+      const obs = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const delay = entry.target.closest('.works-grid')
+              ? Array.from(entry.target.parentElement.children).indexOf(entry.target) * 80
+              : 0;
+            setTimeout(() => {
+              entry.target.classList.add('visible');
+            }, delay);
+            obs.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.15 });
+
+      revealEls.forEach(el => obs.observe(el));
+
+      const photoEl = document.getElementById('aboutPhoto');
+      const photoObs = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting) {
+          setTimeout(() => photoEl.classList.add('revealed'), 200);
+          photoObs.disconnect();
+        }
+      }, { threshold: 0.3 });
+      photoObs.observe(photoEl);
+    })();
+
+    /* =============================================
+       HEADER — scroll shrink / blur
+    ============================================= */
+    (function () {
+      const header = document.querySelector('header');
+      window.addEventListener('scroll', () => {
+        header.style.background = window.scrollY > 20
+          ? 'rgba(245,244,240,0.92)'
+          : 'var(--bg)';
+        header.style.backdropFilter = window.scrollY > 20 ? 'blur(8px)' : 'none';
+      }, { passive: true });
+    })();
+
+    /* =============================================
+       WORKS CARDS — magnetic hover
+    ============================================= */
+    (function () {
+      document.querySelectorAll('.work-card').forEach(card => {
+        card.addEventListener('mousemove', e => {
+          const r = card.getBoundingClientRect();
+          const cx = e.clientX - r.left - r.width / 2;
+          const cy = e.clientY - r.top  - r.height / 2;
+          card.style.transform = `translate(${cx * 0.04}px, ${cy * 0.04}px)`;
+        });
+        card.addEventListener('mouseleave', () => {
+          card.style.transform = '';
+        });
+      });
+    })();
+
+    /* =============================================
+       MODAL — click to open / close
+    ============================================= */
+    (function () {
+      const modal    = document.getElementById('modal');
+      const modalImg = document.getElementById('modalImg');
+      const modalTitle = document.getElementById('modalTitle');
+      const modalDesc  = document.getElementById('modalDesc');
+      const overlay  = document.getElementById('modalOverlay');
+      const closeBtn = document.getElementById('modalClose');
+
+      function openModal(img, title, desc) {
+        modalImg.src = img;
+        modalImg.alt = title + ' ' + desc;
+        modalTitle.textContent = title;
+        modalDesc.textContent  = desc;
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+      }
+
+      function closeModal() {
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+        setTimeout(() => { modalImg.src = ''; }, 300);
+      }
+
+      document.querySelectorAll('.work-card').forEach(card => {
+        card.addEventListener('click', () => {
+          openModal(
+            card.dataset.img,
+            card.dataset.title,
+            card.dataset.desc
+          );
+        });
+      });
+
+      overlay.addEventListener('click', closeModal);
+      closeBtn.addEventListener('click', closeModal);
+
+      document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') closeModal();
+      });
+    })();
+    /* =============================================
+       CONTACT MODAL
+    ============================================= */
+    (function () {
+      const modal    = document.getElementById('contactModal');
+      const overlay  = document.getElementById('contactModalOverlay');
+      const closeBtn = document.getElementById('contactModalClose');
+      const openBtn  = document.getElementById('contactBtn');
+
+      function openModal() {
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+      }
+      function closeModal() {
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+      }
+
+      openBtn.addEventListener('click', e => {
+        e.preventDefault();
+        openModal();
+      });
+      overlay.addEventListener('click', closeModal);
+      closeBtn.addEventListener('click', closeModal);
+      document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') closeModal();
+      });
+
+      // カーソルリングをラベル・ボタンにも適用
+      const ring = document.getElementById('cursorRing');
+      if (ring) {
+        modal.querySelectorAll('label, button, a').forEach(el => {
+          el.addEventListener('mouseenter', () => ring.classList.add('expand'));
+          el.addEventListener('mouseleave', () => ring.classList.remove('expand'));
+        });
+      }
+    })();
+  </script>
+
+</body>
+</html>
